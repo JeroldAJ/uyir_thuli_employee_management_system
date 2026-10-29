@@ -5,6 +5,7 @@ import api, { clearSession } from '../services/api.js'
 function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
   const [submitting, setSubmitting] = useState(false)
   const navigate = useNavigate()
@@ -44,7 +45,18 @@ function Login() {
               <label className="form-label" htmlFor="login-password">Password</label>
               <Link className="small text-decoration-none" to="/forgot-password">Forgot password?</Link>
             </div>
-            <input autoComplete="current-password" className="form-control form-control-lg" id="login-password" onChange={(event) => setPassword(event.target.value)} placeholder="Enter your password" required type="password" value={password} />
+            <div className="input-group input-group-lg">
+              <input autoComplete="current-password" className="form-control" id="login-password" onChange={(event) => setPassword(event.target.value)} placeholder="Enter your password" required type={showPassword ? 'text' : 'password'} value={password} />
+              <button
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-pressed={showPassword}
+                className="btn btn-outline-secondary"
+                onClick={() => setShowPassword((visible) => !visible)}
+                type="button"
+              >
+                {showPassword ? 'Hide' : 'Show'}
+              </button>
+            </div>
           </div>
           {error && <div className="alert alert-danger py-2" role="alert">{error}</div>}
           <button className="btn btn-success btn-lg w-100 mt-2" disabled={submitting} type="submit">{submitting ? 'Signing in…' : 'Sign in'}</button>
