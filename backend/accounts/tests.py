@@ -59,6 +59,23 @@ class PasswordResetApiTests(TestCase):
 
 
 class BootstrapAdminCommandTests(TestCase):
+    def test_command_resets_existing_admin_when_explicit_reset_variables_are_set(self):
+        admin = User.objects.create_superuser(
+            email='existing-admin@example.test',
+            password='Original-Admin-Password-5732!',
+        )
+        new_password = 'Replacement-Admin-Password-8462!'
+        with patch.dict('os.environ', {
+            'EMS_RESET_ADMIN_EMAIL': admin.email,
+            'EMS_RESET_ADMIN_PASSWORD': new_password,
+        }, clear=False):
+            output = StringIO()
+            call_command('bootstrap_admin', stdout=output)
+
+        admin.refresh_from_db()
+        self.assertTrue(admin.check_password(new_password))
+        self.assertIn('Admin password reset completed.', output.getvalue())
+
     def test_command_creates_initial_admin_and_does_not_reset_existing_admin(self):
         environment = {
             'EMS_BOOTSTRAP_ADMIN_EMAIL': 'initial-admin@example.test',
@@ -93,3 +110,55 @@ class BootstrapAdminCommandTests(TestCase):
         }, clear=False):
             with self.assertRaises(CommandError):
                 call_command('bootstrap_admin')
+
+
+class ResetAdminPasswordCommandTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_superuser(
+            email='existing-admin@example.test',
+            password='Original-Admin-Password-5732!',
+        )
+
+    def test_command_resets_matching_superuser_password_without_printing_it(self):
+        environment = {
+            'EMS_RESET_ADMIN_EMAIL': self.admin.email,
+            'EMS_RESET_ADMIN_PASSWORD': 'Replacement-Admin-Password-8462!',
+        }
+        with patch.dict('os.environ', environment, clear=False):
+            output = StringIO()
+            call_command('reset_admin_password', stdout=output)
+
+        self.admin.refresh_from_db()
+        self.assertTrue(self.admin.check_password(environment['EMS_RESET_ADMIN_PASSWORD']))
+        self.assertIn('Admin password reset completed.', output.getvalue())
+        self.assertNotIn(environment['EMS_RESET_ADMIN_PASSWORD'], output.getvalue())
+
+    def test_command_rejects_partial_or_weak_credentials(self):
+        with patch.dict('os.environ', {
+            'EMS_RESET_ADMIN_EMAIL': self.admin.email,
+            'EMS_RESET_ADMIN_PASSWORD': '',
+        }, clear=False):
+            with self.assertRaises(CommandError):
+                call_command('reset_admin_password')
+
+        with patch.dict('os.environ', {
+            'EMS_RESET_ADMIN_EMAIL': self.admin.email,
+            'EMS_RESET_ADMIN_PASSWORD': 'password',
+        }, clear=False):
+            with self.assertRaises(CommandError):
+                call_command('reset_admin_password')
+
+    def test_command_only_resets_superusers(self):
+        User.objects.create_user(
+            email='employee@example.test',
+            password='Employee-Password-7345!',
+        )
+        with patch.dict('os.environ', {
+            'EMS_RESET_ADMIN_EMAIL': 'employee@example.test',
+            'EMS_RESET_ADMIN_PASSWORD': 'Replacement-Admin-Password-8462!',
+        }, clear=False):
+            with self.assertRaisesMessage(
+                CommandError,
+                'No superuser matches EMS_RESET_ADMIN_EMAIL.',
+            ):
+                call_command('reset_admin_password')

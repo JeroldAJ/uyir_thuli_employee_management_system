@@ -88,7 +88,8 @@ This repository includes a Render Blueprint in `render.yaml`. It creates a Djang
 2. Select **New** → **Blueprint**, choose this GitHub repository and the `main` branch, then apply the Blueprint.
 3. Wait for the PostgreSQL database and both services to finish their initial deployment. The API start command runs migrations automatically.
 4. In the API service's **Environment** settings, add `EMS_BOOTSTRAP_ADMIN_EMAIL` and `EMS_BOOTSTRAP_ADMIN_PASSWORD`, save, and wait for the service to redeploy. Choose a strong, unique password. The API startup creates the initial Admin only when one does not already exist. Remove `EMS_BOOTSTRAP_ADMIN_PASSWORD` from the service environment after it succeeds.
-5. Open the web service URL to sign in. The frontend and API hostnames are linked automatically by the Blueprint.
+5. If an existing production superuser's password is unknown, set `EMS_RESET_ADMIN_EMAIL` to that superuser's email and `EMS_RESET_ADMIN_PASSWORD` to a new strong, unique password in the API service's **Environment** settings. Save and wait for deployment logs to show `Admin password reset completed.` The startup bootstrap command resets only a matching superuser when these explicit reset variables are set; it fails if the email is not a superuser. Remove both reset variables immediately after success and deploy again, because the startup command runs whenever the service starts.
+6. Open the web service URL to sign in. The frontend and API hostnames are linked automatically by the Blueprint.
 
 This free configuration is for testing only: Render free web services can spin down when idle, and the free PostgreSQL database expires 30 days after creation. Upgrade the database before expiry to avoid its deletion; use paid instances for production. The existing MySQL credentials in a local `.env` are not used by this deployment and must never be copied into Render environment settings.
 

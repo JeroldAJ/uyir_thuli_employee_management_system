@@ -2,6 +2,7 @@ import os
 
 from django.contrib.auth import get_user_model, password_validation
 from django.core.exceptions import ValidationError
+from django.core.management import call_command
 from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 
@@ -12,6 +13,13 @@ class Command(BaseCommand):
     help = 'Create the initial admin from one-time environment variables, if no superuser exists.'
 
     def handle(self, *args, **options):
+        if (
+            os.getenv('EMS_RESET_ADMIN_EMAIL', '').strip()
+            or os.getenv('EMS_RESET_ADMIN_PASSWORD', '')
+        ):
+            call_command('reset_admin_password', stdout=self.stdout)
+            return
+
         email = os.getenv('EMS_BOOTSTRAP_ADMIN_EMAIL', '').strip()
         password = os.getenv('EMS_BOOTSTRAP_ADMIN_PASSWORD', '')
 
