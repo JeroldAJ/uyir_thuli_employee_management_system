@@ -9,7 +9,7 @@ User = get_user_model()
 
 
 class Command(BaseCommand):
-    help = 'Reset an existing superuser password using one-time environment variables.'
+    help = 'Reset and reactivate an existing superuser using one-time environment variables.'
 
     def handle(self, *args, **options):
         email = os.getenv('EMS_RESET_ADMIN_EMAIL', '').strip()
@@ -44,6 +44,7 @@ class Command(BaseCommand):
                 raise CommandError('; '.join(exc.messages)) from exc
 
             user.set_password(password)
-            user.save(update_fields=('password',))
+            user.is_active = True
+            user.save(update_fields=('password', 'is_active'))
 
         self.stdout.write(self.style.SUCCESS('Admin password reset completed.'))

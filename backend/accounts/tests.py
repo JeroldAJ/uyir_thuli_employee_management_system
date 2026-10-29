@@ -120,6 +120,8 @@ class ResetAdminPasswordCommandTests(TestCase):
         )
 
     def test_command_resets_matching_superuser_password_without_printing_it(self):
+        self.admin.is_active = False
+        self.admin.save(update_fields=('is_active',))
         environment = {
             'EMS_RESET_ADMIN_EMAIL': self.admin.email,
             'EMS_RESET_ADMIN_PASSWORD': 'Replacement-Admin-Password-8462!',
@@ -130,6 +132,7 @@ class ResetAdminPasswordCommandTests(TestCase):
 
         self.admin.refresh_from_db()
         self.assertTrue(self.admin.check_password(environment['EMS_RESET_ADMIN_PASSWORD']))
+        self.assertTrue(self.admin.is_active)
         self.assertIn('Admin password reset completed.', output.getvalue())
         self.assertNotIn(environment['EMS_RESET_ADMIN_PASSWORD'], output.getvalue())
 
