@@ -34,7 +34,6 @@ services:
   - type: web
     name: uyir-thuli-ems-web
     runtime: static
-    plan: free
     buildCommand: npm ci && npm run build
     staticPublishPath: ./dist
     envVars:
