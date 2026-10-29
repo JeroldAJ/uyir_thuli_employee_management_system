@@ -59,6 +59,56 @@ class PasswordResetApiTests(TestCase):
 
 
 class BootstrapAdminCommandTests(TestCase):
+    def test_command_creates_additional_admin_when_create_variables_are_set(self):
+        environment = {
+            'EMS_CREATE_ADMIN_EMAIL': 'additional-admin@example.test',
+            'EMS_CREATE_ADMIN_PASSWORD': 'Additional-Admin-Password-5732!',
+        }
+        with patch.dict('os.environ', environment, clear=False):
+            output = StringIO()
+            call_command('bootstrap_admin', stdout=output)
+
+        admin = User.objects.get(email=environment['EMS_CREATE_ADMIN_EMAIL'])
+        self.assertTrue(admin.is_superuser)
+        self.assertTrue(admin.is_staff)
+        self.assertEqual(admin.role, User.Role.ADMIN)
+        self.assertTrue(admin.check_password(environment['EMS_CREATE_ADMIN_PASSWORD']))
+        self.assertIn('Additional admin account created.', output.getvalue())
+
+    def test_additional_admin_command_does_not_change_existing_user(self):
+        existing_user = User.objects.create_user(
+            email='existing-user@example.test',
+            password='Original-Password-5732!',
+        )
+        environment = {
+            'EMS_CREATE_ADMIN_EMAIL': existing_user.email,
+            'EMS_CREATE_ADMIN_PASSWORD': 'Additional-Admin-Password-8462!',
+        }
+        with patch.dict('os.environ', environment, clear=False):
+            output = StringIO()
+            call_command('create_admin', stdout=output)
+
+        existing_user.refresh_from_db()
+        self.assertFalse(existing_user.is_superuser)
+        self.assertTrue(existing_user.check_password('Original-Password-5732!'))
+        self.assertIn('this email already exists.', output.getvalue())
+
+    def test_additional_admin_command_is_idempotent(self):
+        admin = User.objects.create_superuser(
+            email='additional-admin@example.test',
+            password='Original-Admin-Password-5732!',
+        )
+        with patch.dict('os.environ', {
+            'EMS_CREATE_ADMIN_EMAIL': admin.email,
+            'EMS_CREATE_ADMIN_PASSWORD': 'Different-Admin-Password-8462!',
+        }, clear=False):
+            output = StringIO()
+            call_command('create_admin', stdout=output)
+
+        admin.refresh_from_db()
+        self.assertTrue(admin.check_password('Original-Admin-Password-5732!'))
+        self.assertIn('this email already exists.', output.getvalue())
+
     def test_command_resets_existing_admin_when_explicit_reset_variables_are_set(self):
         admin = User.objects.create_superuser(
             email='existing-admin@example.test',

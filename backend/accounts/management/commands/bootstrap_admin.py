@@ -14,6 +14,13 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         if (
+            os.getenv('EMS_CREATE_ADMIN_EMAIL', '').strip()
+            or os.getenv('EMS_CREATE_ADMIN_PASSWORD', '')
+        ):
+            call_command('create_admin', stdout=self.stdout)
+            return
+
+        if (
             os.getenv('EMS_RESET_ADMIN_EMAIL', '').strip()
             or os.getenv('EMS_RESET_ADMIN_PASSWORD', '')
         ):
