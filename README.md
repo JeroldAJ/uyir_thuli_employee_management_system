@@ -80,6 +80,18 @@ npm run dev
 
 Open `http://localhost:5173`. `npm run build` creates the production frontend bundle; `npm run lint` runs ESLint.
 
+## Deploy a free test instance on Render
+
+This repository includes a Render Blueprint in `render.yaml`. It creates a Django API web service, a React static site, and a Render PostgreSQL database. The application continues using MySQL when `DATABASE_URL` is unset, so local MySQL development remains available.
+
+1. Push this repository to GitHub and sign in to [Render](https://dashboard.render.com/).
+2. Select **New** → **Blueprint**, choose this GitHub repository and the `main` branch, then apply the Blueprint.
+3. Wait for the PostgreSQL database and both services to finish their initial deployment. The API start command runs migrations automatically.
+4. Open the API service's **Shell** and run `python manage.py createsuperuser` to create the first Admin account.
+5. Open the web service URL to sign in. The frontend and API hostnames are linked automatically by the Blueprint.
+
+This free configuration is for testing only: Render free web services can spin down when idle, and the free PostgreSQL database expires 30 days after creation. Upgrade the database before expiry to avoid its deletion; use paid instances for production. The existing MySQL credentials in a local `.env` are not used by this deployment and must never be copied into Render environment settings.
+
 ## API routes and access
 
 All API routes below are prefixed with `/api/`. JWTs are obtained with `POST /token/` using `{ "email": "...", "password": "..." }`, and refreshed with `POST /token/refresh/` using `{ "refresh": "..." }`.
@@ -100,4 +112,5 @@ Run the backend API tests with `python manage.py test accounts attendance --sett
 - Set `DJANGO_DEBUG=False`, a high-entropy `DJANGO_SECRET_KEY`, strict `DJANGO_ALLOWED_HOSTS`, database credentials, and exact CORS origins.
 - Serve Django behind HTTPS and configure secure proxy/cookie settings for your deployment.
 - Store frontend JWTs in secure, HttpOnly cookies rather than local storage for deployments with a suitable refresh-token flow; the included browser app uses local storage for a simple self-hosted setup.
-- Run migrations as a deployment step and back up the MySQL database.
+- Run migrations as a deployment step and back up the database.
+- Render’s free PostgreSQL database expires after 30 days and is deleted after a further 14-day grace period. Upgrade the database before expiry to retain data; free services are for testing, not production.

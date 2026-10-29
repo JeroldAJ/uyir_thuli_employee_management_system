@@ -1,7 +1,12 @@
 import axios from 'axios'
 
+const apiHost = import.meta.env.VITE_API_HOST
+const apiBaseUrl = apiHost
+  ? `https://${apiHost.replace(/^https?:\/\//, '')}/api`
+  : import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api'
+
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000/api',
+  baseURL: apiBaseUrl,
   headers: { 'Content-Type': 'application/json' },
 })
 
